@@ -19,6 +19,10 @@ def refine_prompt(api_key, prompt):
     
     instruction = (
         f"Refine this prompt for generating a high-quality 3D model reference image. "
+        f"Only generate a frontal view of the object. "
+        f"Other views will be generated later again using this as the original "
+        f"reference image, so this must be a perfect visualization of the original objective."
+        f"Adhere to the use of a white background, product shot setting. "
         f"Object: {prompt}. Return ONLY the refined prompt, no markdown."
     )
     

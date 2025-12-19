@@ -2,6 +2,11 @@
 
 A [Blender](https://www.blender.org/) add-on that uses AI to generate 3D objects from text prompts!
 
+## Demo Video
+
+<video src="assets/conjure_demo_2-5x.mp4" controls width="100%"></video>
+
+Disclaimer: This video runs at 2.5x speed.
 ## Workflow
 1.  [**Gemini 3**](https://ai.google.dev/gemini-api/docs/gemini-3): Refines your simple text prompt into a detailed description. Uses Gemini 3 Pro.
 2.  [**Nano-Banana Pro**](https://gemini.google/overview/image-generation/): Generates a high-quality reference image from the refined prompt along with 3 more reference images from different angles.
