@@ -54,7 +54,7 @@ Click [here](assets/conjure_demo_2-5x.mp4) to watch the demo video. Note that th
 
 ## Contributing
 
-Please feel free to refer to #1 to contribute to this project. We welcome all kinds of contributions, such as improving the docs or adding more models and coverage.
+Please feel free to refer to [the Feature List](https://github.com/suvadityamuk/conjure/issues/1) to contribute to this project. We welcome all kinds of contributions, such as improving the docs or adding more models and coverage.
 
 ## License
 
