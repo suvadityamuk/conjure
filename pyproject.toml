@@ -1,11 +1,10 @@
 [project]
-name = "conjure-addon"
+name = "conjure_3d_ai"
 version = "0.1.0"
-description = "Add your description here"
+description = "Conjure - Blender Add-on"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "blender>=1.4",
     "google-genai>=1.56.0",
     "pillow>=12.0.0",
     "requests>=2.32.5",
