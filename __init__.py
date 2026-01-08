@@ -8,10 +8,7 @@ bl_info = {
     "category": "3D View",
 }
 
-from . import properties
-from . import preferences
-from . import operators
-from . import panels
+from . import operators, panels, preferences, properties  # noqa: E402
 
 
 def register():

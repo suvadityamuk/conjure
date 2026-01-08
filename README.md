@@ -52,6 +52,16 @@ In the future, we will move to bundle these dependencies in the extension itself
 
 Click [here](assets/conjure_demo_2-5x.mp4) to watch the demo video. Note that this video is sped up 2.5x for the sake of brevity.
 
+## Development
+
+This project uses [pre-commit](https://pre-commit.com/) with [ruff](https://docs.astral.sh/ruff/) for linting and formatting.
+
+```bash
+uv add --dev pre-commit ruff  # Install dev dependencies
+uv run pre-commit install     # Set up git hooks
+uv run pre-commit run --all-files  # Run manually on all files
+```
+
 ## Contributing
 
 Please feel free to refer to [the Feature List](https://github.com/suvadityamuk/conjure/issues/1) to contribute to this project. We welcome all kinds of contributions, such as improving the docs or adding more models and coverage.

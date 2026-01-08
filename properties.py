@@ -3,14 +3,13 @@ import bpy
 
 class ConjureLogItem(bpy.types.PropertyGroup):
     message: bpy.props.StringProperty()
-    type: bpy.props.StringProperty(default='INFO')
+    type: bpy.props.StringProperty(default="INFO")
     path: bpy.props.StringProperty()
 
 
 class ConjureSettings(bpy.types.PropertyGroup):
     prompt: bpy.props.StringProperty(
-        name="Prompt",
-        default="A futuristic cyberpunk helmet"
+        name="Prompt", default="A futuristic cyberpunk helmet"
     )
     refined_prompt: bpy.props.StringProperty()
     is_running: bpy.props.BoolProperty(default=False)
