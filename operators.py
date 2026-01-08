@@ -1,3 +1,4 @@
+import concurrent.futures
 import queue
 import tempfile
 import threading
@@ -93,9 +94,28 @@ class CONJURE_OT_Generate(bpy.types.Operator):
             q.put(("REFINED", refined, ""))
             q.put(("INFO", "Prompt refined", ""))
 
-            # Step 2: Generate views
-            views = [
-                ("Front", f"Front view of {refined}, white background, product shot"),
+            # Step 2: Generate Front View (Synchronous - needed as reference)
+            q.put(("INFO", "Generating Front view...", ""))
+
+            front_prompt = f"Front view of {refined}, white background, product shot"
+
+            # Helper to generate a single view
+            def generate_view(view_name, view_prompt, input_ref=None):
+                q.put(("INFO", f"Generating {view_name}...", ""))
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tf:
+                    out = tf.name
+
+                # If it's the front view call, input_ref is None usually,
+                # but valid for subsequent calls
+                res_path = utils.generate_image(gemini_key, view_prompt, out, input_ref)
+                q.put(("IMAGE", f"{view_name} done", res_path))
+                return res_path
+
+            # Generate front view first
+            front_path = generate_view("Front", front_prompt, None)
+
+            # Step 3: Generate Other Views (Parallel)
+            remaining_views = [
                 (
                     "Right",
                     f"Right side view of {refined}, white background, product shot",
@@ -107,26 +127,27 @@ class CONJURE_OT_Generate(bpy.types.Operator):
                 ),
             ]
 
-            image_paths = []
-            front_path = None
+            # We need to maintain order: Front, Right, Back, Left for Meshy?
+            # Meshy docs say "image_urls": [front, right, back, left, top, bottom]
+            # usually, but order technically doesn't strictly matter for multicam
+            # unless specified.
+            # However, `image_paths` list was ordered before. Let's keep it ordered.
 
-            for view_name, view_prompt in views:
-                q.put(("INFO", f"Generating {view_name}...", ""))
+            image_paths = [front_path]
 
-                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
-                    out_path = f.name
+            # Re-doing the parallel part to be cleaner and maintain order
+            # We can map the futures directly
+            with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+                # Submit tasks in order
+                futures = []
+                for v_name, v_prompt in remaining_views:
+                    futures.append(
+                        executor.submit(generate_view, v_name, v_prompt, front_path)
+                    )
 
-                # Use front image as reference for other views
-                ref_image = front_path if front_path else None
-                path = utils.generate_image(
-                    gemini_key, view_prompt, out_path, ref_image
-                )
-
-                if view_name == "Front":
-                    front_path = path
-
-                image_paths.append(path)
-                q.put(("IMAGE", f"{view_name} done", path))
+                # Gather results in order
+                results = [f.result() for f in futures]
+                image_paths.extend(results)
 
             # Step 3: Generate 3D
             q.put(("INFO", "Uploading to Meshy...", ""))
