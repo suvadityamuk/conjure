@@ -100,35 +100,44 @@ def generate_3d_meshy(api_key, image_paths):
         "should_texture": False,
     }
 
-    # Create task - API returns 202 Accepted on success
-    resp = requests.post(
-        "https://api.meshy.ai/openapi/v1/multi-image-to-3d",
-        headers=headers,
-        json=payload,
-    )
+    # Use Session to reuse TCP connection (SSL handshake optimization)
+    with requests.Session() as session:
+        session.headers.update(headers)
 
-    # 200 or 202 are both success
-    if resp.status_code not in [200, 202]:
-        raise Exception(f"Meshy API error {resp.status_code}: {resp.text}")
-
-    task_id = resp.json()["result"]
-
-    # Poll until complete
-    for _ in range(120):
-        time.sleep(5)
-        status_resp = requests.get(
-            f"https://api.meshy.ai/openapi/v1/multi-image-to-3d/{task_id}",
-            headers=headers,
+        # Create task - API returns 202 Accepted on success
+        resp = session.post(
+            "https://api.meshy.ai/openapi/v1/multi-image-to-3d",
+            json=payload,
         )
-        if status_resp.status_code != 200:
-            continue
 
-        data = status_resp.json()
-        if data["status"] == "SUCCEEDED":
-            return data["model_urls"]["glb"]
-        elif data["status"] in ["FAILED", "EXPIRED"]:
-            msg = data.get("task_error", {}).get("message", "Unknown error")
-            raise Exception(f"Meshy failed: {msg}")
+        # 200 or 202 are both success
+        if resp.status_code not in [200, 202]:
+            raise Exception(f"Meshy API error {resp.status_code}: {resp.text}")
+
+        task_id = resp.json()["result"]
+
+        # Adaptive polling: Check frequently at first (2s), then back off to 5s
+        # This reduces waiting time for fast jobs without spamming the API for slow ones.
+        intervals = [2, 2, 2, 5]
+        default_interval = 5
+
+        # Poll until complete
+        for i in range(120):
+            wait_time = intervals[i] if i < len(intervals) else default_interval
+            time.sleep(wait_time)
+
+            status_resp = session.get(
+                f"https://api.meshy.ai/openapi/v1/multi-image-to-3d/{task_id}"
+            )
+            if status_resp.status_code != 200:
+                continue
+
+            data = status_resp.json()
+            if data["status"] == "SUCCEEDED":
+                return data["model_urls"]["glb"]
+            elif data["status"] in ["FAILED", "EXPIRED"]:
+                msg = data.get("task_error", {}).get("message", "Unknown error")
+                raise Exception(f"Meshy failed: {msg}")
 
     raise Exception("Meshy timed out")
 
