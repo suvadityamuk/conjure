@@ -113,14 +113,18 @@ def generate_3d_meshy(api_key, image_paths):
 
     task_id = resp.json()["result"]
 
-    # Poll until complete
-    for _ in range(120):
-        time.sleep(5)
+    # Poll until complete (max 10 minutes)
+    start_time = time.time()
+    interval = 2.0  # Start with 2s polling to catch fast completions
+    while time.time() - start_time < 600:
+        time.sleep(interval)
         status_resp = requests.get(
             f"https://api.meshy.ai/openapi/v1/multi-image-to-3d/{task_id}",
             headers=headers,
         )
         if status_resp.status_code != 200:
+            # If API errors, don't crash immediately, just back off
+            interval = min(interval * 1.5, 5)
             continue
 
         data = status_resp.json()
@@ -129,6 +133,9 @@ def generate_3d_meshy(api_key, image_paths):
         elif data["status"] in ["FAILED", "EXPIRED"]:
             msg = data.get("task_error", {}).get("message", "Unknown error")
             raise Exception(f"Meshy failed: {msg}")
+
+        # Adaptive polling: slowly increase to 5s max to be polite
+        interval = min(interval * 1.5, 5)
 
     raise Exception("Meshy timed out")
 
