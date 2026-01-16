@@ -23,6 +23,8 @@ class CONJURE_OT_Generate(bpy.types.Operator):
 
         tool = context.scene.conjure
 
+        needs_redraw = False
+
         # Process all queued messages
         while not self._queue.empty():
             msg = self._queue.get_nowait()
@@ -39,6 +41,8 @@ class CONJURE_OT_Generate(bpy.types.Operator):
                 context.window_manager.event_timer_remove(self._timer)
                 return {"CANCELLED"}
 
+            needs_redraw = True
+
             if msg_type == "REFINED":
                 tool.refined_prompt = text
 
@@ -51,10 +55,11 @@ class CONJURE_OT_Generate(bpy.types.Operator):
             log.type = "IMAGE" if msg_type == "IMAGE" else "INFO"
             log.path = path
 
-        # Force UI redraw
-        for area in context.screen.areas:
-            if area.type == "VIEW_3D":
-                area.tag_redraw()
+        # Force UI redraw only if state changed
+        if needs_redraw:
+            for area in context.screen.areas:
+                if area.type == "VIEW_3D":
+                    area.tag_redraw()
 
         return {"PASS_THROUGH"}
 
