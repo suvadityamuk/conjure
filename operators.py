@@ -23,9 +23,11 @@ class CONJURE_OT_Generate(bpy.types.Operator):
 
         tool = context.scene.conjure
 
+        updated = False
         # Process all queued messages
         while not self._queue.empty():
             msg = self._queue.get_nowait()
+            updated = True
             msg_type, text, path = msg
 
             if msg_type == "DONE":
@@ -51,10 +53,11 @@ class CONJURE_OT_Generate(bpy.types.Operator):
             log.type = "IMAGE" if msg_type == "IMAGE" else "INFO"
             log.path = path
 
-        # Force UI redraw
-        for area in context.screen.areas:
-            if area.type == "VIEW_3D":
-                area.tag_redraw()
+        # Force UI redraw only if state changed
+        if updated:
+            for area in context.screen.areas:
+                if area.type == "VIEW_3D":
+                    area.tag_redraw()
 
         return {"PASS_THROUGH"}
 
