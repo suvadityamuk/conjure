@@ -24,8 +24,10 @@ class CONJURE_OT_Generate(bpy.types.Operator):
         tool = context.scene.conjure
 
         # Process all queued messages
+        state_changed = False
         while not self._queue.empty():
             msg = self._queue.get_nowait()
+            state_changed = True
             msg_type, text, path = msg
 
             if msg_type == "DONE":
@@ -52,9 +54,10 @@ class CONJURE_OT_Generate(bpy.types.Operator):
             log.path = path
 
         # Force UI redraw
-        for area in context.screen.areas:
-            if area.type == "VIEW_3D":
-                area.tag_redraw()
+        if state_changed:
+            for area in context.screen.areas:
+                if area.type == "VIEW_3D":
+                    area.tag_redraw()
 
         return {"PASS_THROUGH"}
 
