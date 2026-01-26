@@ -144,8 +144,10 @@ def generate_3d_meshy(api_key, image_paths):
 
 def download_file(url, output_path):
     """Download a file from URL."""
-    resp = requests.get(url)
+    # ⚡ Bolt: Stream download to reduce memory usage for large files
+    resp = requests.get(url, stream=True)
     resp.raise_for_status()
     with open(output_path, "wb") as f:
-        f.write(resp.content)
+        for chunk in resp.iter_content(chunk_size=8192):
+            f.write(chunk)
     return output_path
