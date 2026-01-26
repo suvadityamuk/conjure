@@ -139,6 +139,7 @@ def download_file(url, output_path):
     resp = requests.get(url, stream=True)
     resp.raise_for_status()
     with open(output_path, "wb") as f:
-        for chunk in resp.iter_content(chunk_size=8192):
+        for chunk in resp.iter_content(chunk_size=8 * 1024):  # 8KB
+            f.write(chunk)
             f.write(chunk)
     return output_path
