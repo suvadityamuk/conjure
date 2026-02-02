@@ -90,10 +90,13 @@ class CONJURE_OT_Generate(bpy.types.Operator):
 
     def _run_pipeline(self, gemini_key, meshy_key, prompt, q):
         try:
+            # ⚡ Bolt: Create client once to save ~80ms per call
+            client = utils.get_client(gemini_key)
+
             q.put(("INFO", "Refining prompt...", ""))
 
             # Step 1: Refine prompt
-            refined = utils.refine_prompt(gemini_key, prompt)
+            refined = utils.refine_prompt(gemini_key, prompt, client=client)
             q.put(("REFINED", refined, ""))
             q.put(("INFO", "Prompt refined", ""))
 
@@ -103,19 +106,21 @@ class CONJURE_OT_Generate(bpy.types.Operator):
             front_prompt = f"Front view of {refined}, white background, product shot"
 
             # Helper to generate a single view
-            def generate_view(view_name, view_prompt, input_ref=None):
+            def generate_view(view_name, view_prompt, input_ref=None, client=None):
                 q.put(("INFO", f"Generating {view_name}...", ""))
                 with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tf:
                     out = tf.name
 
                 # If it's the front view call, input_ref is None usually,
                 # but valid for subsequent calls
-                res_path = utils.generate_image(gemini_key, view_prompt, out, input_ref)
+                res_path = utils.generate_image(
+                    gemini_key, view_prompt, out, input_ref, client=client
+                )
                 q.put(("IMAGE", f"{view_name} done", res_path))
                 return res_path
 
             # Generate front view first
-            front_path = generate_view("Front", front_prompt, None)
+            front_path = generate_view("Front", front_prompt, None, client=client)
 
             # Step 3: Generate Other Views (Parallel)
             remaining_views = [
@@ -145,7 +150,9 @@ class CONJURE_OT_Generate(bpy.types.Operator):
                 futures = []
                 for v_name, v_prompt in remaining_views:
                     futures.append(
-                        executor.submit(generate_view, v_name, v_prompt, front_path)
+                        executor.submit(
+                            generate_view, v_name, v_prompt, front_path, client
+                        )
                     )
 
                 # Gather results in order
