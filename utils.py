@@ -16,9 +16,10 @@ def get_client(api_key):
     return genai.Client(api_key=api_key)
 
 
-def refine_prompt(api_key, prompt):
+def refine_prompt(api_key, prompt, client=None):
     """Use Gemini to refine a prompt for 3D model generation."""
-    client = get_client(api_key)
+    if client is None:
+        client = get_client(api_key)
 
     instruction = (
         f"Refine this prompt for generating a high-quality 3D model reference image. "
@@ -36,7 +37,7 @@ def refine_prompt(api_key, prompt):
     return response.text.strip()
 
 
-def generate_image(api_key, prompt, output_path, input_image_path=None):
+def generate_image(api_key, prompt, output_path, input_image_path=None, client=None):
     """
     Generate an image using Gemini.
     If input_image_path is provided, use it as reference for the generation.
@@ -44,7 +45,8 @@ def generate_image(api_key, prompt, output_path, input_image_path=None):
     from google.genai import types
     from PIL import Image
 
-    client = get_client(api_key)
+    if client is None:
+        client = get_client(api_key)
 
     config = types.GenerateContentConfig(
         response_modalities=["Image"],
