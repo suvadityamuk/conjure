@@ -92,8 +92,11 @@ class CONJURE_OT_Generate(bpy.types.Operator):
         try:
             q.put(("INFO", "Refining prompt...", ""))
 
+            # ⚡ Bolt: Init Gemini client once to avoid ~75ms overhead per call
+            client = utils.get_client(gemini_key)
+
             # Step 1: Refine prompt
-            refined = utils.refine_prompt(gemini_key, prompt)
+            refined = utils.refine_prompt(client, prompt)
             q.put(("REFINED", refined, ""))
             q.put(("INFO", "Prompt refined", ""))
 
@@ -110,7 +113,7 @@ class CONJURE_OT_Generate(bpy.types.Operator):
 
                 # If it's the front view call, input_ref is None usually,
                 # but valid for subsequent calls
-                res_path = utils.generate_image(gemini_key, view_prompt, out, input_ref)
+                res_path = utils.generate_image(client, view_prompt, out, input_ref)
                 q.put(("IMAGE", f"{view_name} done", res_path))
                 return res_path
 
