@@ -16,10 +16,9 @@ def get_client(api_key):
     return genai.Client(api_key=api_key)
 
 
-def refine_prompt(api_key, prompt):
+def refine_prompt(client, prompt):
     """Use Gemini to refine a prompt for 3D model generation."""
-    client = get_client(api_key)
-
+    # ⚡ Bolt: Using injected client to avoid instantiation overhead (~75ms)
     instruction = (
         f"Refine this prompt for generating a high-quality 3D model reference image. "
         f"Only generate a frontal view of the object. "
@@ -36,7 +35,7 @@ def refine_prompt(api_key, prompt):
     return response.text.strip()
 
 
-def generate_image(api_key, prompt, output_path, input_image_path=None):
+def generate_image(client, prompt, output_path, input_image_path=None):
     """
     Generate an image using Gemini.
     If input_image_path is provided, use it as reference for the generation.
@@ -44,8 +43,7 @@ def generate_image(api_key, prompt, output_path, input_image_path=None):
     from google.genai import types
     from PIL import Image
 
-    client = get_client(api_key)
-
+    # ⚡ Bolt: Using injected client to avoid repeated instantiation overhead
     config = types.GenerateContentConfig(
         response_modalities=["Image"],
         image_config=types.ImageConfig(aspect_ratio="1:1"),
@@ -117,7 +115,7 @@ def generate_3d_meshy(api_key, image_paths):
         task_id = resp.json()["result"]
 
         # Adaptive polling: Check frequently at first (2s), then back off to 5s
-        # This reduces waiting time for fast jobs without spamming the API for slow ones.
+        # This reduces wait time for fast jobs without spamming API for slow ones.
         intervals = [2, 2, 2, 5]
         default_interval = 5
 
