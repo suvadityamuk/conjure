@@ -90,10 +90,15 @@ class CONJURE_OT_Generate(bpy.types.Operator):
 
     def _run_pipeline(self, gemini_key, meshy_key, prompt, q):
         try:
+            from google import genai
+
+            # ⚡ Bolt: Instantiate Gemini Client once to reduce ~400ms overhead
+            client = genai.Client(api_key=gemini_key)
+
             q.put(("INFO", "Refining prompt...", ""))
 
             # Step 1: Refine prompt
-            refined = utils.refine_prompt(gemini_key, prompt)
+            refined = utils.refine_prompt(client, prompt)
             q.put(("REFINED", refined, ""))
             q.put(("INFO", "Prompt refined", ""))
 
@@ -110,7 +115,7 @@ class CONJURE_OT_Generate(bpy.types.Operator):
 
                 # If it's the front view call, input_ref is None usually,
                 # but valid for subsequent calls
-                res_path = utils.generate_image(gemini_key, view_prompt, out, input_ref)
+                res_path = utils.generate_image(client, view_prompt, out, input_ref)
                 q.put(("IMAGE", f"{view_name} done", res_path))
                 return res_path
 
